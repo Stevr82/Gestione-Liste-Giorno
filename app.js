@@ -62,16 +62,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listener per mostrare il modulo di inserimento
     btnInserisciNominativo.addEventListener('click', () => {
-        console.log("Pulsante 'Inserisci Nominativo' cliccato!"); // Messaggio di debug
-        formContainer.style.display = 'flex';
+        console.log("Pulsante 'Inserisci Nominativo' cliccato. Nascondo il menu principale.");
         menuPrincipale.style.display = 'none';
-        popolaDropdown(); // Popola le caselle a tendina
+        
+        // Aggiungo un piccolo ritardo per garantire che l'interfaccia si aggiorni
+        setTimeout(() => {
+            console.log("Mostro il modulo di inserimento.");
+            formContainer.style.display = 'flex';
+            popolaDropdown(); // Popola le caselle a tendina
+        }, 50); 
     });
 
     // Event listener per tornare al menu principale
     btnIndietro.addEventListener('click', () => {
+        console.log("Pulsante 'Indietro' cliccato. Nascondo il modulo di inserimento.");
         formContainer.style.display = 'none';
-        menuPrincipale.style.display = 'grid';
+        
+        // Aggiungo un piccolo ritardo per garantire che l'interfaccia si aggiorni
+        setTimeout(() => {
+            console.log("Mostro il menu principale.");
+            menuPrincipale.style.display = 'grid';
+        }, 50);
     });
 
     // Gestisce l'invio del form per inserire i dati in Excel
