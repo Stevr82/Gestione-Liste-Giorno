@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const orarioDropdown = document.getElementById('orario');
 
         // Popola i giorni (da 1 a 31)
+        giornoDropdown.innerHTML = '';
         for (let i = 1; i <= 31; i++) {
             const option = document.createElement('option');
             option.value = i;
@@ -40,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Popola i mesi (da 1 a 12)
+        meseDropdown.innerHTML = '';
         for (let i = 1; i <= 12; i++) {
             const option = document.createElement('option');
             option.value = i;
@@ -48,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Popola gli orari
+        orarioDropdown.innerHTML = '';
         const orari = ['9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
         orari.forEach(orario => {
             const option = document.createElement('option');
@@ -94,32 +97,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await msalInstance.acquireTokenSilent(loginRequest);
             const accessToken = response.accessToken;
 
-            // ID del nuovo file fornito dall'utente
+            // ID del file
             const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368"; 
-            const worksheetName = "Foglio1"; // Assicurati che il nome sia corretto
-            const tableName = "Tabella1"; 
 
-            const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/tables('${tableName}')/rows`;
-
-            // L'ordine dei valori corrisponde alle colonne richieste
-            const valoriRiga = [
-                dati.orario, // Colonna A
-                '', // Colonna B (vuota)
-                `${dati.cognome} ${dati.nome}`, // Colonna C
-                dati.ambiente, // Colonna D
-                ...Array(13).fill(''), // Colonne E-Q (vuote)
-                dati.gruppo, // Colonna R
-                dati.consulente, // Colonna S
-                dati.arredatore // Colonna T
+            // Mappa per i nomi dei mesi
+            const nomiMesi = [
+                'gen', 'feb', 'mar', 'apr', 'mag', 'giu',
+                'lug', 'ago', 'set', 'ott', 'nov', 'dic'
             ];
 
+            // Ottieni il nome del foglio di lavoro basato sulla data
+            const mese = nomiMesi[parseInt(dati.mese) - 1];
+            const worksheetName = `${dati.giorno}-${mese}`;
+            
+            // Per scrivere in un intervallo di celle, devi specificare la posizione esatta.
+            // Qui usiamo un intervallo che inizia dalla riga 4 e copre le colonne necessarie.
+            // Questo sovrascriverà i dati esistenti in quelle celle.
+            const rangeAddress = "A4:T4";
+
+            // Costruisci l'URL dell'API con il nome del foglio dinamico e l'indirizzo del range
+            const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
+
+            // L'ordine dei valori deve corrispondere all'ordine delle colonne nell'intervallo
+            // (A, B, C, D, ..., R, S, T)
+            const valoriRiga = [
+                [dati.orario, '', `${dati.cognome} ${dati.nome}`, dati.ambiente, ...Array(13).fill(''), dati.gruppo, dati.consulente, dati.arredatore]
+            ];
+            
             const body = {
-                values: [valoriRiga]
+                values: valoriRiga
             };
 
-            // Effettua la richiesta POST per aggiungere la riga
+            // Effettua la richiesta POST per aggiornare le celle
             await fetch(apiUrl, {
-                method: 'POST',
+                method: 'PATCH', // Usiamo PATCH per aggiornare i dati
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json'
@@ -127,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(body)
             });
 
-            statoElement.innerText = "Dati inseriti con successo!";
+            statoElement.innerText = `Dati inseriti con successo nel foglio "${worksheetName}"!`;
 
             // Resetta il form e nascondi il modulo dopo un breve ritardo
             nominativoForm.reset();
