@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         auth: {
             clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1",
             authority: "https://login.microsoftonline.com/common",
-            redirectUri: "http://localhost:8080" 
+            redirectUri: "http://localhost:8080"
         }
     };
 
@@ -61,11 +61,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Event listener per mostrare il modulo di inserimento
-    btnInserisciNominativo.addEventListener('click', () => {
+    btnInserisciNominativo.addEventListener('click', async () => {
         console.log("Pulsante 'Inserisci Nominativo' cliccato. Nascondo il menu principale e mostro il form.");
-        menuPrincipale.classList.add('hidden');
-        formContainer.classList.remove('hidden');
-        popolaDropdown(); // Popola le caselle a tendina
+        try {
+            await msalInstance.acquireTokenSilent(loginRequest);
+            // Se l'operazione ha successo, mostriamo il form
+            menuPrincipale.classList.add('hidden');
+            formContainer.classList.remove('hidden');
+            popolaDropdown(); // Popola le caselle a tendina
+        } catch (error) {
+            console.error("Errore nell'ottenere il token silenziosamente:", error);
+            // Se fallisce, proviamo con un popup
+            if (error instanceof msal.InteractionRequiredAuthError) {
+                try {
+                    await msalInstance.acquireTokenPopup(loginRequest);
+                    // Se il login tramite popup ha successo, mostriamo il form
+                    menuPrincipale.classList.add('hidden');
+                    formContainer.classList.remove('hidden');
+                    popolaDropdown();
+                } catch (popupError) {
+                    console.error("Errore nel login tramite popup:", popupError);
+                    statoElement.innerText = "Errore di autenticazione. Riprova più tardi.";
+                }
+            } else {
+                statoElement.innerText = `Errore: ${error.message}`;
+            }
+        }
     });
 
     // Event listener per tornare al menu principale
