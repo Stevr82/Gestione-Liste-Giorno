@@ -1,7 +1,7 @@
 // Configurazione di MSAL (usa il tuo ID applicazione!)
 const msalConfig = {
     auth: {
-        clientId: "IL_TUO_ID_CLIENT", // <-- SOSTITUISCI QUI!
+        clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1", // <-- SOSTITUISCI QUI!
         authority: "https://login.microsoftonline.com/common",
         redirectUri: "http://localhost:8080" 
     }
@@ -84,3 +84,4 @@ document.getElementById("btnCompila").addEventListener("click", async () => {
         stato.innerText = "Operazione annullata.";
     }
 });
+
