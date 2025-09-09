@@ -1,16 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Modifica Excel</title>
+    <title>Gestione Lista</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .pulsanti-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 20px;
+            padding: 20px;
+        }
+        .pulsante {
+            padding: 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            background-color: #0078d4; /* Blu Microsoft */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .pulsante:hover {
+            background-color: #005a9e;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Modifica Dati nel Foglio Excel</h1>
-    <form id="excelForm">
-        <label for="valore">Inserisci il valore da scrivere:</label>
-        <input type="text" id="valore" name="valore" required>
-        <button type="submit">Aggiorna Cella</button>
-    </form>
-    <div id="stato"></div>
+    <h1>Seleziona un'azione</h1>
+    <div class="pulsanti-container">
+        <button class="pulsante" id="btnInserisci">INSERISCI NOMINATIVO</button>
+        <button class="pulsante" id="btnRicerca">RICERCA NOMINATIVO</button>
+        <button class="pulsante" id="btnVisualizza">VISUALIZZA LISTA GIORNO</button>
+        <button class="pulsante" id="btnCompila">COMPILA LISTA GIORNO</button>
+    </div>
 
     <script src="https://alcdn.msauth.net/browser/2.16.0/js/msal-browser.js"></script>
     <script src="app.js"></script>
