@@ -94,24 +94,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await msalInstance.acquireTokenSilent(loginRequest);
             const accessToken = response.accessToken;
 
+            // ID del nuovo file fornito dall'utente
             const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368"; 
             const worksheetName = "Foglio1"; // Assicurati che il nome sia corretto
-            // In questo caso, presupponiamo che i tuoi dati siano in una tabella chiamata 'Tabella1'
             const tableName = "Tabella1"; 
 
             const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/tables('${tableName}')/rows`;
 
-            // L'ordine dei valori deve corrispondere all'ordine delle colonne della tabella
+            // L'ordine dei valori corrisponde alle colonne richieste
             const valoriRiga = [
-                dati.cognome,
-                dati.nome,
-                dati.ambiente,
-                dati.gruppo,
-                dati.consulente,
-                dati.arredatore,
-                dati.giorno,
-                dati.mese,
-                dati.orario
+                dati.orario, // Colonna A
+                '', // Colonna B (vuota)
+                `${dati.cognome} ${dati.nome}`, // Colonna C
+                dati.ambiente, // Colonna D
+                ...Array(13).fill(''), // Colonne E-Q (vuote)
+                dati.gruppo, // Colonna R
+                dati.consulente, // Colonna S
+                dati.arredatore // Colonna T
             ];
 
             const body = {
