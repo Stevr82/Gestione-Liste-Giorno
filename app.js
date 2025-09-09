@@ -1,7 +1,7 @@
 // Configurazione di MSAL (usa il tuo ID applicazione!)
 const msalConfig = {
     auth: {
-        clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1", // <-- SOSTITUISCI QUI!
+        clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1",
         authority: "https://login.microsoftonline.com/common",
         redirectUri: "http://localhost:8080" 
     }
@@ -21,7 +21,39 @@ const nominativoForm = document.getElementById('nominativoForm');
 
 // Funzione per aggiornare la cella Excel
 async function updateExcelCell(valore) {
-    // ... La logica è la stessa del file precedente ...
+    try {
+        const response = await msalInstance.acquireTokenSilent(loginRequest);
+        const accessToken = response.accessToken;
+
+        const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368"; 
+        const worksheetName = "Foglio1"; // Assicurati che il nome sia corretto
+        const cellAddress = "A1";        // Assicurati che la cella sia corretta
+
+        const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${cellAddress}')`;
+
+        const body = {
+            values: [[valore]]
+        };
+
+        await fetch(apiUrl, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+    } catch (error) {
+        if (error instanceof msal.InteractionRequiredAuthError) {
+            await msalInstance.acquireTokenPopup(loginRequest);
+            return updateExcelCell(valore);
+        } else {
+            console.error("Errore durante l'aggiornamento del file Excel:", error);
+            alert(`Errore: ${error.message}`);
+            throw error;
+        }
+    }
 }
 
 // Funzione per riempire le caselle a tendina
@@ -107,4 +139,3 @@ document.getElementById("btnVisualizza").addEventListener("click", () => {
 document.getElementById("btnCompila").addEventListener("click", async () => {
     alert("Funzionalità 'COMPILA LISTA GIORNO' ancora da implementare. Ora si usa 'Inserisci Nominativo'.");
 });
-
