@@ -1,6 +1,8 @@
 // Aspetta che il DOM sia completamente caricato prima di eseguire lo script
 document.addEventListener('DOMContentLoaded', () => {
 
+    console.log("Il tuo script è stato caricato!"); // Messaggio di debug
+
     // Configurazione di MSAL (con il tuo ID applicazione)
     const msalConfig = {
         auth: {
@@ -57,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listener per mostrare il modulo di inserimento
     btnInserisciNominativo.addEventListener('click', () => {
+        console.log("Pulsante 'Inserisci Nominativo' cliccato!"); // Messaggio di debug
         formContainer.style.display = 'flex';
         menuPrincipale.style.display = 'none';
         popolaDropdown(); // Popola le caselle a tendina
@@ -154,5 +157,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById("btnCompila").addEventListener("click", async () => {
         statoElement.innerText = "Funzionalità 'COMPILA LISTA GIORNO' ancora da implementare.";
     });
-
 });
