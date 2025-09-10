@@ -14,56 +14,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         scopes: ["User.Read", "Files.ReadWrite"]
     };
 
-    // 🔐 Ripristina account salvato da localStorage
-    const savedAccount = localStorage.getItem("msalAccount");
-    if (savedAccount) {
-        const accounts = msalInstance.getAllAccounts();
-        const match = accounts.find(acc => acc.homeAccountId === savedAccount);
-        if (match) {
-            msalInstance.setActiveAccount(match);
-            console.log("Account ripristinato:", match.username);
-        }
-    }
-
-    async function ensureLogin() {
-        let account = msalInstance.getActiveAccount();
-        if (!account) {
-            try {
-                const loginResponse = await msalInstance.loginPopup(loginRequest);
-                msalInstance.setActiveAccount(loginResponse.account);
-                localStorage.setItem("msalAccount", loginResponse.account.homeAccountId); // ✅ Salva l'account
-                account = loginResponse.account;
-            } catch (error) {
-                statoElement.innerText = "Errore durante il login.";
-                console.error(error);
-                return null;
+    // 🔁 Gestione del redirect dopo login
+    const handleRedirect = async () => {
+        try {
+            const response = await msalInstance.handleRedirectPromise();
+            if (response && response.account) {
+                msalInstance.setActiveAccount(response.account);
+                localStorage.setItem("msalAccount", response.account.homeAccountId);
+                console.log("Login completato via redirect:", response.account.username);
             }
+        } catch (error) {
+            console.error("Errore nel redirect:", error);
         }
-        return account;
+    };
+
+    await handleRedirect();
+
+    // 🔐 Login automatico all'apertura
+    const savedAccountId = localStorage.getItem("msalAccount");
+    const accounts = msalInstance.getAllAccounts();
+    const account = accounts.find(acc => acc.homeAccountId === savedAccountId);
+
+    if (account) {
+        msalInstance.setActiveAccount(account);
+        console.log("Account attivo:", account.username);
+    } else {
+        msalInstance.loginRedirect(loginRequest); // 🔁 Reindirizza al login Microsoft
+        return; // Interrompe l'esecuzione finché non torna dal login
     }
 
+    // 🔑 Ottieni token
     async function getAccessToken() {
-        const account = await ensureLogin();
-        if (!account) return null;
-
         try {
             const response = await msalInstance.acquireTokenSilent({
                 ...loginRequest,
-                account: account
+                account: msalInstance.getActiveAccount()
             });
             return response.accessToken;
         } catch (error) {
-            try {
-                const popupResponse = await msalInstance.acquireTokenPopup(loginRequest);
-                return popupResponse.accessToken;
-            } catch (popupError) {
-                statoElement.innerText = "Autenticazione fallita.";
-                console.error(popupError);
-                return null;
-            }
+            console.error("Errore nel token:", error);
+            statoElement.innerText = "Autenticazione fallita.";
+            return null;
         }
     }
 
+    // 🎯 Elementi DOM
     const menuPrincipale = document.querySelector('.pulsanti-container');
     const formContainer = document.getElementById('formInserisciNominativo');
     const btnInserisciNominativo = document.getElementById('btnInserisci');
@@ -92,10 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    btnInserisciNominativo.addEventListener('click', async () => {
-        const account = await ensureLogin();
-        if (!account) return;
-
+    btnInserisciNominativo.addEventListener('click', () => {
         menuPrincipale.classList.add('hidden');
         formContainer.classList.remove('hidden');
         popolaDropdown();
