@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const statoElement = document.getElementById("stato");
+    const foglioDropdown = document.getElementById("foglio");
 
     const msalConfig = {
         auth: {
@@ -53,6 +54,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    async function elencaFogliNelFile() {
+        const accessToken = await getAccessToken();
+        if (!accessToken) return;
+
+        const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368";
+        const url = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets`;
+
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+
+            const data = await response.json();
+            foglioDropdown.innerHTML = "";
+
+            if (data.value && data.value.length > 0) {
+                data.value.forEach(ws => {
+                    const option = document.createElement("option");
+                    option.value = ws.name;
+                    option.textContent = ws.name;
+                    foglioDropdown.appendChild(option);
+                });
+                statoElement.innerText = `✅ Fogli caricati: ${data.value.length}`;
+            } else {
+                statoElement.innerText = "⚠️ Nessun foglio trovato nel file.";
+            }
+        } catch (error) {
+            console.error("Errore nel recupero dei fogli:", error);
+            statoElement.innerText = `❌ Errore: ${error.message}`;
+        }
+    }
+
     const menuPrincipale = document.querySelector('.pulsanti-container');
     const formContainer = document.getElementById('formInserisciNominativo');
     const btnInserisciNominativo = document.getElementById('btnInserisci');
@@ -60,20 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nominativoForm = document.getElementById('nominativoForm');
 
     function popolaDropdown() {
-        const giorno = document.getElementById('giorno');
-        const mese = document.getElementById('mese');
         const orario = document.getElementById('orario');
-
-        giorno.innerHTML = '';
-        for (let i = 1; i <= 31; i++) {
-            giorno.innerHTML += `<option value="${i}">${i}</option>`;
-        }
-
-        mese.innerHTML = '';
-        for (let i = 1; i <= 12; i++) {
-            mese.innerHTML += `<option value="${i}">${i}</option>`;
-        }
-
         const orari = ['9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
         orario.innerHTML = '';
         orari.forEach(o => {
@@ -81,10 +101,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    btnInserisciNominativo.addEventListener('click', () => {
+    btnInserisciNominativo.addEventListener('click', async () => {
         menuPrincipale.classList.add('hidden');
         formContainer.classList.remove('hidden');
         popolaDropdown();
+        await elencaFogliNelFile();
     });
 
     btnIndietro.addEventListener('click', () => {
@@ -102,35 +123,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             gruppo: document.getElementById('gruppo').value,
             consulente: document.getElementById('consulente').value,
             arredatore: document.getElementById('arredatore').value,
-            giorno: document.getElementById('giorno').value,
-            mese: document.getElementById('mese').value,
-            orario: document.getElementById('orario').value
+            orario: document.getElementById('orario').value,
+            foglio: document.getElementById('foglio').value
         };
 
-        statoElement.innerText = "Verifica del foglio in corso...";
+        statoElement.innerText = "Invio in corso...";
 
         const accessToken = await getAccessToken();
         if (!accessToken) return;
 
         const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368";
-        const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
-        const mese = nomiMesi[parseInt(dati.mese) - 1];
-        const worksheetName = `${dati.giorno}-${mese}`;
 
-        // Verifica che il foglio esista
-        const fogliResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-        });
-
-        const fogli = await fogliResponse.json();
-        const foglioEsiste = fogli.value.some(ws => ws.name === worksheetName);
-
-        if (!foglioEsiste) {
-            statoElement.innerText = `❌ Il foglio "${worksheetName}" non esiste nel file.`;
-            return;
-        }
-
-        // Crea sessione persistente
         const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/createSession`, {
             method: 'POST',
             headers: {
@@ -143,7 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const sessionId = (await sessionResponse.json()).id;
 
         const rangeAddress = "A4:T4";
-        const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
+        const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${dati.foglio}')/range(address='${rangeAddress}')`;
 
         const valoriRiga = [[
             dati.orario,                     // A4
@@ -167,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify({ values: valoriRiga })
             });
 
-            statoElement.innerText = `✅ Dati inseriti nel foglio "${worksheetName}"!`;
+            statoElement.innerText = `✅ Dati inseriti nel foglio "${dati.foglio}"!`;
             nominativoForm.reset();
             setTimeout(() => {
                 formContainer.classList.add('hidden');
