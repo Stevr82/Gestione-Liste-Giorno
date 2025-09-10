@@ -1,9 +1,8 @@
-// Aspetta che il DOM sia completamente caricato prima di eseguire lo script
-document.addEventListener('DOMContentLoaded', () => {
+// Aspetta che il DOM sia completamente caricato
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("Script caricato correttamente!");
 
-    console.log("Il tuo script è stato caricato!"); // Messaggio di debug
-
-    // Configurazione di MSAL (con il tuo ID applicazione)
+    // Configurazione MSAL
     const msalConfig = {
         auth: {
             clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1",
@@ -17,7 +16,56 @@ document.addEventListener('DOMContentLoaded', () => {
         scopes: ["User.Read", "Files.ReadWrite"]
     };
 
-    // Seleziona gli elementi del DOM
+    // Imposta account attivo se già presente
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+        msalInstance.setActiveAccount(accounts[0]);
+        console.log("Account attivo impostato automaticamente:", accounts[0]);
+    }
+
+    // Funzione per effettuare login se necessario
+    async function ensureLogin() {
+        let account = msalInstance.getActiveAccount();
+        if (!account) {
+            try {
+                const loginResponse = await msalInstance.loginPopup(loginRequest);
+                msalInstance.setActiveAccount(loginResponse.account);
+                account = loginResponse.account;
+                console.log("Login effettuato:", account);
+            } catch (error) {
+                console.error("Errore nel login:", error);
+                statoElement.innerText = "Errore durante il login. Riprova.";
+                return null;
+            }
+        }
+        return account;
+    }
+
+    // Funzione per ottenere il token
+    async function getAccessToken() {
+        const account = await ensureLogin();
+        if (!account) return null;
+
+        try {
+            const response = await msalInstance.acquireTokenSilent({
+                ...loginRequest,
+                account: account
+            });
+            return response.accessToken;
+        } catch (error) {
+            console.warn("Token silenzioso fallito, provo con popup...");
+            try {
+                const popupResponse = await msalInstance.acquireTokenPopup(loginRequest);
+                return popupResponse.accessToken;
+            } catch (popupError) {
+                console.error("Errore nel token tramite popup:", popupError);
+                statoElement.innerText = "Autenticazione fallita.";
+                return null;
+            }
+        }
+    }
+
+    // Elementi DOM
     const menuPrincipale = document.querySelector('.pulsanti-container');
     const formContainer = document.getElementById('formInserisciNominativo');
     const btnInserisciNominativo = document.getElementById('btnInserisci');
@@ -25,82 +73,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const nominativoForm = document.getElementById('nominativoForm');
     const statoElement = document.getElementById("stato");
 
-    // Funzione per riempire le caselle a tendina
+    // Popola dropdown
     function popolaDropdown() {
         const giornoDropdown = document.getElementById('giorno');
         const meseDropdown = document.getElementById('mese');
         const orarioDropdown = document.getElementById('orario');
 
-        // Popola i giorni (da 1 a 31)
         giornoDropdown.innerHTML = '';
         for (let i = 1; i <= 31; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = i;
-            giornoDropdown.appendChild(option);
+            giornoDropdown.innerHTML += `<option value="${i}">${i}</option>`;
         }
-        
-        // Popola i mesi (da 1 a 12)
+
         meseDropdown.innerHTML = '';
         for (let i = 1; i <= 12; i++) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = i;
-            meseDropdown.appendChild(option);
+            meseDropdown.innerHTML += `<option value="${i}">${i}</option>`;
         }
-        
-        // Popola gli orari
-        orarioDropdown.innerHTML = '';
+
         const orari = ['9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
+        orarioDropdown.innerHTML = '';
         orari.forEach(orario => {
-            const option = document.createElement('option');
-            option.value = orario;
-            option.textContent = orario;
-            orarioDropdown.appendChild(option);
+            orarioDropdown.innerHTML += `<option value="${orario}">${orario}</option>`;
         });
     }
 
-    // Event listener per mostrare il modulo di inserimento
+    // Mostra form
     btnInserisciNominativo.addEventListener('click', async () => {
-        console.log("Pulsante 'Inserisci Nominativo' cliccato. Nascondo il menu principale e mostro il form.");
-        try {
-            await msalInstance.acquireTokenSilent(loginRequest);
-            // Se l'operazione ha successo, mostriamo il form
-            menuPrincipale.classList.add('hidden');
-            formContainer.classList.remove('hidden');
-            popolaDropdown(); // Popola le caselle a tendina
-        } catch (error) {
-            console.error("Errore nell'ottenere il token silenziosamente:", error);
-            // Se fallisce, proviamo con un popup
-            if (error instanceof msal.InteractionRequiredAuthError) {
-                try {
-                    await msalInstance.acquireTokenPopup(loginRequest);
-                    // Se il login tramite popup ha successo, mostriamo il form
-                    menuPrincipale.classList.add('hidden');
-                    formContainer.classList.remove('hidden');
-                    popolaDropdown();
-                } catch (popupError) {
-                    console.error("Errore nel login tramite popup:", popupError);
-                    statoElement.innerText = "Errore di autenticazione. Riprova più tardi.";
-                }
-            } else {
-                statoElement.innerText = `Errore: ${error.message}`;
-            }
-        }
+        const account = await ensureLogin();
+        if (!account) return;
+
+        menuPrincipale.classList.add('hidden');
+        formContainer.classList.remove('hidden');
+        popolaDropdown();
     });
 
-    // Event listener per tornare al menu principale
+    // Torna al menu
     btnIndietro.addEventListener('click', () => {
-        console.log("Pulsante 'Indietro' cliccato. Nascondo il form e mostro il menu principale.");
         formContainer.classList.add('hidden');
         menuPrincipale.classList.remove('hidden');
     });
 
-    // Gestisce l'invio del form per inserire i dati in Excel
+    // Invia dati
     nominativoForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        
-        // Raccogli i dati dal form
+        e.preventDefault();
+
         const dati = {
             cognome: document.getElementById('cognome').value,
             nome: document.getElementById('nome').value,
@@ -113,80 +128,54 @@ document.addEventListener('DOMContentLoaded', () => {
             orario: document.getElementById('orario').value
         };
 
-        statoElement.innerText = "Sto inviando i dati al file Excel...";
+        statoElement.innerText = "Invio in corso...";
+
+        const accessToken = await getAccessToken();
+        if (!accessToken) return;
+
+        const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368";
+        const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+        const mese = nomiMesi[parseInt(dati.mese) - 1];
+        const worksheetName = `${dati.giorno}-${mese}`;
+        const rangeAddress = "A4:T4";
+        const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
+
+        const valoriRiga = [
+            [dati.orario, '', `${dati.cognome} ${dati.nome}`, dati.ambiente, ...Array(13).fill(''), dati.gruppo, dati.consulente, dati.arredatore]
+        ];
 
         try {
-            const response = await msalInstance.acquireTokenSilent(loginRequest);
-            const accessToken = response.accessToken;
-
-            // ID del file
-            const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368"; 
-
-            // Mappa per i nomi dei mesi
-            const nomiMesi = [
-                'gen', 'feb', 'mar', 'apr', 'mag', 'giu',
-                'lug', 'ago', 'set', 'ott', 'nov', 'dic'
-            ];
-
-            // Ottieni il nome del foglio di lavoro basato sulla data
-            const mese = nomiMesi[parseInt(dati.mese) - 1];
-            const worksheetName = `${dati.giorno}-${mese}`;
-            
-            // Per scrivere in un intervallo di celle, devi specificare la posizione esatta.
-            // Qui usiamo un intervallo che inizia dalla riga 4 e copre le colonne necessarie.
-            // Questo sovrascriverà i dati esistenti in quelle celle.
-            const rangeAddress = "A4:T4";
-
-            // Costruisci l'URL dell'API con il nome del foglio dinamico e l'indirizzo del range
-            const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
-
-            // L'ordine dei valori deve corrispondere all'ordine delle colonne nell'intervallo
-            // (A, B, C, D, ..., R, S, T)
-            const valoriRiga = [
-                [dati.orario, '', `${dati.cognome} ${dati.nome}`, dati.ambiente, ...Array(13).fill(''), dati.gruppo, dati.consulente, dati.arredatore]
-            ];
-            
-            const body = {
-                values: valoriRiga
-            };
-
-            // Effettua la richiesta POST per aggiornare le celle
             await fetch(apiUrl, {
-                method: 'PATCH', // Usiamo PATCH per aggiornare i dati
+                method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(body)
+                body: JSON.stringify({ values: valoriRiga })
             });
 
-            statoElement.innerText = `Dati inseriti con successo nel foglio "${worksheetName}"!`;
-
-            // Resetta il form e nascondi il modulo dopo un breve ritardo
+            statoElement.innerText = `Dati inseriti nel foglio "${worksheetName}"!`;
             nominativoForm.reset();
             setTimeout(() => {
                 formContainer.classList.add('hidden');
                 menuPrincipale.classList.remove('hidden');
-            }, 2000); 
-
+            }, 2000);
         } catch (error) {
-            console.error("Errore durante l'invio dei dati:", error);
+            console.error("Errore durante l'invio:", error);
             statoElement.innerText = `Errore: ${error.message}`;
-            if (error instanceof msal.InteractionRequiredAuthError) {
-                 alert("L'accesso è scaduto. Riprova.");
-                 msalInstance.acquireTokenPopup(loginRequest);
-            }
         }
     });
 
-    // Aggiungi un ascoltatore per gli altri pulsanti, con messaggi di funzionalità non implementata
+    // Funzioni placeholder per gli altri pulsanti
     document.getElementById("btnRicerca").addEventListener("click", () => {
         statoElement.innerText = "Funzionalità 'RICERCA NOMINATIVO' ancora da implementare.";
     });
+
     document.getElementById("btnVisualizza").addEventListener("click", () => {
         statoElement.innerText = "Funzionalità 'VISUALIZZA LISTA GIORNO' ancora da implementare.";
     });
-    document.getElementById("btnCompila").addEventListener("click", async () => {
+
+    document.getElementById("btnCompila").addEventListener("click", () => {
         statoElement.innerText = "Funzionalità 'COMPILA LISTA GIORNO' ancora da implementare.";
     });
 });
