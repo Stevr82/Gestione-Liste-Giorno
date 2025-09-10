@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const statoElement = document.getElementById("stato");
+  const elencoFogli = document.getElementById("elencoFogli");
 
   const msalConfig = {
     auth: {
@@ -52,6 +53,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       return null;
     }
   }
+
+  async function mostraFogliDisponibili() {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
+
+    const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368";
+    const url = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets`;
+
+    try {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      const data = await response.json();
+
+      if (data.value && data.value.length > 0) {
+        const nomi = data.value.map(ws => ws.name);
+        elencoFogli.innerHTML = `📄 Fogli disponibili nel file:<br>${nomi.join(" • ")}`;
+      } else {
+        elencoFogli.innerText = "⚠️ Nessun foglio trovato nel file.";
+      }
+    } catch (error) {
+      console.error("Errore nel recupero dei fogli:", error);
+      elencoFogli.innerText = `❌ Errore: ${error.message}`;
+    }
+  }
+
+  await mostraFogliDisponibili();
 
   const menuPrincipale = document.querySelector('.pulsanti-container');
   const formContainer = document.getElementById('formInserisciNominativo');
@@ -119,14 +148,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const rangeAddress = "A4:T4";
 
     const valoriRiga = [[
-      dati.orario,                     // A4
-      '',                              // B4
-      `${dati.cognome} ${dati.nome}`, // C4
-      dati.ambiente,                  // D4
-      ...Array(12).fill(''),          // E4 → Q4
-      dati.gruppo,                    // R4
-      dati.consulente,                // S4
-      dati.arredatore                 // T4
+      dati.orario,
+      '',
+      `${dati.cognome} ${dati.nome}`,
+      dati.ambiente,
+      ...Array(12).fill(''),
+      dati.gruppo,
+      dati.consulente,
+      dati.arredatore
     ]];
 
     const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/createSession`, {
