@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const msalInstance = new msal.PublicClientApplication(msalConfig);
   const loginRequest = {
-    scopes: ["User.Read", "Sites.Read.All", "Files.ReadWrite.All"]
+    scopes: ["User.Read", "Files.ReadWrite.All"]
   };
 
-  const siteId = "nordestholding.sharepoint.com,8c3c9c2e-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"; // ← Inserisci il tuo siteId
+  const userEmail = "centralino_verona_arredissima_com@nordestholding.com";
   const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368";
 
   const handleRedirect = async () => {
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const accessToken = await getAccessToken();
     if (!accessToken) return;
 
-    const url = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${fileId}/workbook/worksheets`;
+    const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/worksheets`;
 
     try {
       const response = await fetch(url, {
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       mese.innerHTML += `<option value="${i}">${i}</option>`;
     }
 
-    const orari = ['9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
+    const orari = ['9:00','9:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30'];
     orario.innerHTML = '';
     orari.forEach(o => {
       orario.innerHTML += `<option value="${o}">${o}</option>`;
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const accessToken = await getAccessToken();
     if (!accessToken) return;
 
-    const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+    const nomiMesi = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
     const mese = nomiMesi[parseInt(dati.mese) - 1];
     const worksheetName = `${dati.giorno}-${mese}`;
     const rangeAddress = "A4:T4";
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       dati.arredatore
     ]];
 
-    const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${fileId}/workbook/createSession`, {
+    const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/createSession`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const sessionId = (await sessionResponse.json()).id;
 
-    const apiUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
+    const apiUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
 
     try {
       await fetch(apiUrl, {
