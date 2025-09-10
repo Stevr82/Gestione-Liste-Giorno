@@ -1,223 +1,191 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <title>Gestione Liste Giorno</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    /* Stili di base e reset */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-      background-color: #eef2f7; /* Sfondo più chiaro */
-      color: #333;
-    }
+  <meta charset="UTF-8" />
+  <title>Gestione Liste Giorno</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+    }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
 
-    h1 {
-      font-size: 2.5em;
-      margin-bottom: 40px;
-      color: #1a2a4b;
-      text-align: center;
-    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      color: #333;
+    }
 
-    /* Stili per i pulsanti del menu principale */
-    .pulsanti-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 30px;
-      width: 100%;
-      max-width: 800px;
-    }
+    .pulsanti-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+      width: 90%;
+      max-width: 700px;
+      justify-items: center;
+    }
 
-    .pulsante {
-      padding: 30px 20px;
-      font-size: 1.2em;
-      font-weight: bold;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
+    .pulsante {
+      width: 300px;
+      padding: 25px;
+      font-size: 1.3em;
+      font-weight: bold;
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-align: center;
+    }
 
-    .pulsante:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-    }
+    .pulsante:hover {
+      background-color: #005a9e;
+    }
 
-    #btnInserisci { background-color: #5d5dff; }
-    #btnRicerca { background-color: #ff9f43; }
-    #btnVisualizza { background-color: #2ecc71; }
-    #btnCompila { background-color: #3498db; }
+    #formInserisciNominativo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
 
-    /* Stili per il popup del form */
-    #formInserisciNominativo {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.6);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      backdrop-filter: blur(5px);
-      animation: fadeIn 0.3s ease-out;
-    }
+    .modulo-contenuto {
+      background-color: white;
+      padding: 40px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
 
-    .modulo-contenuto {
-      background-color: white;
-      padding: 40px;
-      border-radius: 15px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      animation: scaleIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    }
+    .modulo-contenuto h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
 
-    .modulo-contenuto h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #1a2a4b;
-    }
+    .modulo-contenuto label {
+      font-weight: bold;
+    }
 
-    .modulo-contenuto label {
-      font-weight: 600;
-      margin-bottom: 5px;
-    }
+    .modulo-contenuto input,
+    .modulo-contenuto select {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1em;
+      width: 100%;
+    }
 
-    .modulo-contenuto input,
-    .modulo-contenuto select {
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 1em;
-      width: 100%;
-      box-sizing: border-box;
-    }
+    .pulsanti-form {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
 
-    .pulsanti-form {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 30px;
-    }
+    .pulsanti-form button {
+      width: 48%;
+      padding: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+    }
 
-    .pulsanti-form button {
-      width: 48%;
-      padding: 15px;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1em;
-      transition: background-color 0.3s ease, transform 0.2s ease;
-    }
+    #btnInserisciDati {
+      background-color: #28a745;
+      color: white;
+    }
 
-    #btnInserisciDati {
-      background-color: #27ae60;
-      color: white;
-    }
+    #btnIndietro {
+      background-color: #dc3545;
+      color: white;
+    }
 
-    #btnIndietro {
-      background-color: #e74c3c;
-      color: white;
-    }
+    #stato {
+      margin-top: 30px;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
 
-    .pulsanti-form button:hover {
-      transform: scale(1.05);
-    }
-
-    #stato {
-      margin-top: 30px;
-      font-weight: bold;
-      color: #555;
-      text-align: center;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* Animazioni */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes scaleIn {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-  </style>
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
-  <h1>Gestione Liste Giorno</h1>
+  <h1>Gestione Liste Giorno</h1>
 
-  <div class="pulsanti-container">
-    <button class="pulsante" id="btnInserisci">INSERISCI NOMINATIVO</button>
-    <button class="pulsante" id="btnRicerca">RICERCA NOMINATIVO</button>
-    <button class="pulsante" id="btnVisualizza">VISUALIZZA LISTA GIORNO</button>
-    <button class="pulsante" id="btnCompila">COMPILA LISTA GIORNO</button>
-  </div>
+  <div class="pulsanti-container">
+    <button class="pulsante" id="btnInserisci">INSERISCI NOMINATIVO</button>
+    <button class="pulsante" id="btnRicerca">RICERCA NOMINATIVO</button>
+    <button class="pulsante" id="btnVisualizza">VISUALIZZA LISTA GIORNO</button>
+    <button class="pulsante" id="btnCompila">COMPILA LISTA GIORNO</button>
+  </div>
 
-  <p id="stato"></p>
+  <p id="stato"></p>
 
-  <div id="formInserisciNominativo" class="hidden">
-    <div class="modulo-contenuto">
-      <h2>Inserisci Nominativo</h2>
-      <form id="nominativoForm">
-        <label for="cognome">Cognome:</label>
-        <input type="text" id="cognome" name="cognome" required />
+  <div id="formInserisciNominativo" class="hidden">
+    <div class="modulo-contenuto">
+      <h2>Inserisci Nominativo</h2>
+      <form id="nominativoForm">
+        <label for="cognome">Cognome:</label>
+        <input type="text" id="cognome" name="cognome" required />
 
-        <label for="nome">Nome:</label>
-        <input type="text" id="nome" name="nome" required />
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required />
 
-        <label for="ambiente">Ambiente:</label>
-        <input type="text" id="ambiente" name="ambiente" />
+        <label for="ambiente">Ambiente:</label>
+        <input type="text" id="ambiente" name="ambiente" />
 
-        <label for="gruppo">Gruppo:</label>
-        <input type="text" id="gruppo" name="gruppo" />
+        <label for="gruppo">Gruppo:</label>
+        <input type="text" id="gruppo" name="gruppo" />
 
-        <label for="consulente">Consulente:</label>
-        <input type="text" id="consulente" name="consulente" />
+        <label for="consulente">Consulente:</label>
+        <input type="text" id="consulente" name="consulente" />
 
-        <label for="arredatore">Arredatore:</label>
-        <input type="text" id="arredatore" name="arredatore" />
+        <label for="arredatore">Arredatore:</label>
+        <input type="text" id="arredatore" name="arredatore" />
 
-        <label for="giorno">Giorno:</label>
-        <select id="giorno" name="giorno" required></select>
+        <label for="giorno">Giorno:</label>
+        <select id="giorno" name="giorno" required></select>
 
-        <label for="mese">Mese:</label>
-        <select id="mese" name="mese" required></select>
+        <label for="mese">Mese:</label>
+        <select id="mese" name="mese" required></select>
 
-        <label for="orario">Orario:</label>
-        <select id="orario" name="orario" required></select>
+        <label for="orario">Orario:</label>
+        <select id="orario" name="orario" required></select>
 
-        <div class="pulsanti-form">
-          <button type="submit" id="btnInserisciDati">INSERISCI</button>
-          <button type="button" id="btnIndietro">INDIETRO</button>
-        </div>
-      </form>
-    </div>
-  </div>
+        <div class="pulsanti-form">
+          <button type="submit" id="btnInserisciDati">INSERISCI</button>
+          <button type="button" id="btnIndietro">INDIETRO</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-  <script src="https://alcdn.msauth.net/browser/2.16.0/js/msal-browser.js"></script>
-  <script src="app.js"></script>
+  <script src="https://alcdn.msauth.net/browser/2.16.0/js/msal-browser.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
