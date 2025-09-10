@@ -1,4 +1,3 @@
-// Aspetta che il DOM sia completamente caricato
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("Script caricato correttamente!");
 
@@ -7,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         auth: {
             clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1",
             authority: "https://login.microsoftonline.com/common",
-            redirectUri: "http://localhost:8080"
+            redirectUri: "https://stefano.github.io/lista-nominativi" // <-- Sostituisci con il tuo URL pubblico
         }
     };
 
@@ -23,7 +22,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("Account attivo impostato automaticamente:", accounts[0]);
     }
 
-    // Funzione per effettuare login se necessario
     async function ensureLogin() {
         let account = msalInstance.getActiveAccount();
         if (!account) {
@@ -41,7 +39,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return account;
     }
 
-    // Funzione per ottenere il token
     async function getAccessToken() {
         const account = await ensureLogin();
         if (!account) return null;
@@ -73,7 +70,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nominativoForm = document.getElementById('nominativoForm');
     const statoElement = document.getElementById("stato");
 
-    // Popola dropdown
     function popolaDropdown() {
         const giornoDropdown = document.getElementById('giorno');
         const meseDropdown = document.getElementById('mese');
@@ -96,7 +92,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Mostra form
     btnInserisciNominativo.addEventListener('click', async () => {
         const account = await ensureLogin();
         if (!account) return;
@@ -106,13 +101,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         popolaDropdown();
     });
 
-    // Torna al menu
     btnIndietro.addEventListener('click', () => {
         formContainer.classList.add('hidden');
         menuPrincipale.classList.remove('hidden');
     });
 
-    // Invia dati
     nominativoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -166,7 +159,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Funzioni placeholder per gli altri pulsanti
     document.getElementById("btnRicerca").addEventListener("click", () => {
         statoElement.innerText = "Funzionalità 'RICERCA NOMINATIVO' ancora da implementare.";
     });
