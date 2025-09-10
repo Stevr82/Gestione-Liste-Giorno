@@ -1,179 +1,191 @@
-document.addEventListener('DOMContentLoaded', async () => {
-  const statoElement = document.getElementById("stato");
-
-  const msalConfig = {
-    auth: {
-      clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1",
-      authority: "https://login.microsoftonline.com/common",
-      redirectUri: "https://stevr82.github.io/Gestione-Liste-Giorno/"
-    }
-  };
-
-  const msalInstance = new msal.PublicClientApplication(msalConfig);
-  const loginRequest = {
-    scopes: ["User.Read", "Files.ReadWrite"]
-  };
-
-  const handleRedirect = async () => {
-    try {
-      const response = await msalInstance.handleRedirectPromise();
-      if (response && response.account) {
-        msalInstance.setActiveAccount(response.account);
-        localStorage.setItem("msalAccount", response.account.homeAccountId);
-      }
-    } catch (error) {
-      console.error("Errore nel redirect:", error);
-    }
-  };
-
-  await handleRedirect();
-
-  const savedAccountId = localStorage.getItem("msalAccount");
-  const accounts = msalInstance.getAllAccounts();
-  const account = accounts.find(acc => acc.homeAccountId === savedAccountId);
-
-  if (account) {
-    msalInstance.setActiveAccount(account);
-  } else {
-    msalInstance.loginRedirect(loginRequest);
-    return;
-  }
-
-  async function getAccessToken() {
-    try {
-      const response = await msalInstance.acquireTokenSilent({
-        ...loginRequest,
-        account: msalInstance.getActiveAccount()
-      });
-      return response.accessToken;
-    } catch (error) {
-      console.error("Errore nel token:", error);
-      statoElement.innerText = "Autenticazione fallita.";
-      return null;
-    }
-  }
-
-  const menuPrincipale = document.querySelector('.pulsanti-container');
-  const formContainer = document.getElementById('formInserisciNominativo');
-  const btnInserisciNominativo = document.getElementById('btnInserisci');
-  const btnIndietro = document.getElementById('btnIndietro');
-  const nominativoForm = document.getElementById('nominativoForm');
-
-  function popolaDropdown() {
-    const giorno = document.getElementById('giorno');
-    const mese = document.getElementById('mese');
-    const orario = document.getElementById('orario');
-
-    giorno.innerHTML = '';
-    for (let i = 1; i <= 31; i++) {
-      giorno.innerHTML += `<option value="${i}">${i}</option>`;
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestione Liste Giorno</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
     }
 
-    mese.innerHTML = '';
-    for (let i = 1; i <= 12; i++) {
-      mese.innerHTML += `<option value="${i}">${i}</option>`;
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
-    const orari = ['9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
-    orario.innerHTML = '';
-    orari.forEach(o => {
-      orario.innerHTML += `<option value="${o}">${o}</option>`;
-    });
-  }
-
-  btnInserisciNominativo.addEventListener('click', () => {
-    menuPrincipale.classList.add('hidden');
-    formContainer.classList.remove('hidden');
-    popolaDropdown();
-  });
-
-  btnIndietro.addEventListener('click', () => {
-    formContainer.classList.add('hidden');
-    menuPrincipale.classList.remove('hidden');
-  });
-
-  nominativoForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const dati = {
-      cognome: document.getElementById('cognome').value,
-      nome: document.getElementById('nome').value,
-      ambiente: document.getElementById('ambiente').value,
-      gruppo: document.getElementById('gruppo').value,
-      consulente: document.getElementById('consulente').value,
-      arredatore: document.getElementById('arredatore').value,
-      giorno: document.getElementById('giorno').value,
-      mese: document.getElementById('mese').value,
-      orario: document.getElementById('orario').value
-    };
-
-    statoElement.innerText = "Invio in corso...";
-
-    const accessToken = await getAccessToken();
-    if (!accessToken) return;
-
-    const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368";
-    const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
-    const mese = nomiMesi[parseInt(dati.mese) - 1];
-    const worksheetName = `${dati.giorno}-${mese}`;
-    const rangeAddress = "A4:T4";
-
-    const valoriRiga = [[
-      dati.orario,                     // A4
-      '',                              // B4
-      `${dati.cognome} ${dati.nome}`, // C4
-      dati.ambiente,                  // D4
-      ...Array(12).fill(''),          // E4 → Q4
-      dati.gruppo,                    // R4
-      dati.consulente,                // S4
-      dati.arredatore                 // T4
-    ]];
-
-    const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/createSession`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ persistChanges: true })
-    });
-
-    const sessionId = (await sessionResponse.json()).id;
-
-    const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
-
-    try {
-      await fetch(apiUrl, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'workbook-session-id': sessionId
-        },
-        body: JSON.stringify({ values: valoriRiga })
-      });
-
-      statoElement.innerText = `✅ Dati inseriti nel foglio "${worksheetName}"!`;
-      nominativoForm.reset();
-      setTimeout(() => {
-        formContainer.classList.add('hidden');
-        menuPrincipale.classList.remove('hidden');
-      }, 2000);
-    } catch (error) {
-      statoElement.innerText = `❌ Errore: ${error.message}`;
-      console.error(error);
+    h1 {
+      font-size: 2em;
+      margin-bottom: 30px;
+      color: #333;
     }
-  });
 
-  document.getElementById("btnRicerca").addEventListener("click", () => {
-    statoElement.innerText = "Funzionalità 'RICERCA NOMINATIVO' ancora da implementare.";
-  });
+    .pulsanti-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+      width: 90%;
+      max-width: 700px;
+      justify-items: center;
+    }
 
-  document.getElementById("btnVisualizza").addEventListener("click", () => {
-    statoElement.innerText = "Funzionalità 'VISUALIZZA LISTA GIORNO' ancora da implementare.";
-  });
+    .pulsante {
+      width: 300px;
+      padding: 25px;
+      font-size: 1.3em;
+      font-weight: bold;
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-align: center;
+    }
 
-  document.getElementById("btnCompila").addEventListener("click", () => {
-    statoElement.innerText = "Funzionalità 'COMPILA LISTA GIORNO' ancora da implementare.";
-  });
-});
+    .pulsante:hover {
+      background-color: #005a9e;
+    }
+
+    #formInserisciNominativo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modulo-contenuto {
+      background-color: white;
+      padding: 40px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .modulo-contenuto h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .modulo-contenuto label {
+      font-weight: bold;
+    }
+
+    .modulo-contenuto input,
+    .modulo-contenuto select {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1em;
+      width: 100%;
+    }
+
+    .pulsanti-form {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .pulsanti-form button {
+      width: 48%;
+      padding: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    #btnInserisciDati {
+      background-color: #28a745;
+      color: white;
+    }
+
+    #btnIndietro {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    #stato {
+      margin-top: 30px;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gestione Liste Giorno</h1>
+
+  <div class="pulsanti-container">
+    <button class="pulsante" id="btnInserisci">INSERISCI NOMINATIVO</button>
+    <button class="pulsante" id="btnRicerca">RICERCA NOMINATIVO</button>
+    <button class="pulsante" id="btnVisualizza">VISUALIZZA LISTA GIORNO</button>
+    <button class="pulsante" id="btnCompila">COMPILA LISTA GIORNO</button>
+  </div>
+
+  <p id="stato"></p>
+
+  <div id="formInserisciNominativo" class="hidden">
+    <div class="modulo-contenuto">
+      <h2>Inserisci Nominativo</h2>
+      <form id="nominativoForm">
+        <label for="cognome">Cognome:</label>
+        <input type="text" id="cognome" name="cognome" required />
+
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required />
+
+        <label for="ambiente">Ambiente:</label>
+        <input type="text" id="ambiente" name="ambiente" />
+
+        <label for="gruppo">Gruppo:</label>
+        <input type="text" id="gruppo" name="gruppo" />
+
+        <label for="consulente">Consulente:</label>
+        <input type="text" id="consulente" name="consulente" />
+
+        <label for="arredatore">Arredatore:</label>
+        <input type="text" id="arredatore" name="arredatore" />
+
+        <label for="giorno">Giorno:</label>
+        <select id="giorno" name="giorno" required></select>
+
+        <label for="mese">Mese:</label>
+        <select id="mese" name="mese" required></select>
+
+        <label for="orario">Orario:</label>
+        <select id="orario" name="orario" required></select>
+
+        <div class="pulsanti-form">
+          <button type="submit" id="btnInserisciDati">INSERISCI</button>
+          <button type="button" id="btnIndietro">INDIETRO</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://alcdn.msauth.net/browser/2.16.0/js/msal-browser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
