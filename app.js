@@ -14,9 +14,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         scopes: ["User.Read", "Files.ReadWrite"]
     };
 
-    const accounts = msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-        msalInstance.setActiveAccount(accounts[0]);
+    // 🔐 Ripristina account salvato da localStorage
+    const savedAccount = localStorage.getItem("msalAccount");
+    if (savedAccount) {
+        const accounts = msalInstance.getAllAccounts();
+        const match = accounts.find(acc => acc.homeAccountId === savedAccount);
+        if (match) {
+            msalInstance.setActiveAccount(match);
+            console.log("Account ripristinato:", match.username);
+        }
     }
 
     async function ensureLogin() {
@@ -25,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const loginResponse = await msalInstance.loginPopup(loginRequest);
                 msalInstance.setActiveAccount(loginResponse.account);
+                localStorage.setItem("msalAccount", loginResponse.account.homeAccountId); // ✅ Salva l'account
                 account = loginResponse.account;
             } catch (error) {
                 statoElement.innerText = "Errore durante il login.";
