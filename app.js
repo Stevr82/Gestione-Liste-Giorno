@@ -1,191 +1,60 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <title>Gestione Liste Giorno</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: sans-serif;
-      background-color: #f0f0f0;
+document.addEventListener('DOMContentLoaded', async () => {
+  const statoElement = document.getElementById("stato");
+
+  const msalConfig = {
+    auth: {
+      clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1",
+      authority: "https://login.microsoftonline.com/common",
+      redirectUri: "https://stevr82.github.io/Gestione-Liste-Giorno/"
     }
+  };
 
-    body {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+  const msalInstance = new msal.PublicClientApplication(msalConfig);
+  const loginRequest = {
+    scopes: ["User.Read", "Files.ReadWrite"]
+  };
+
+  const handleRedirect = async () => {
+    try {
+      const response = await msalInstance.handleRedirectPromise();
+      if (response && response.account) {
+        msalInstance.setActiveAccount(response.account);
+        localStorage.setItem("msalAccount", response.account.homeAccountId);
+      }
+    } catch (error) {
+      console.error("Errore nel redirect:", error);
     }
+  };
 
-    h1 {
-      font-size: 2em;
-      margin-bottom: 30px;
-      color: #333;
+  await handleRedirect();
+
+  const savedAccountId = localStorage.getItem("msalAccount");
+  const accounts = msalInstance.getAllAccounts();
+  const account = accounts.find(acc => acc.homeAccountId === savedAccountId);
+
+  if (account) {
+    msalInstance.setActiveAccount(account);
+  } else {
+    msalInstance.loginRedirect(loginRequest);
+    return;
+  }
+
+  async function getAccessToken() {
+    try {
+      const response = await msalInstance.acquireTokenSilent({
+        ...loginRequest,
+        account: msalInstance.getActiveAccount()
+      });
+      return response.accessToken;
+    } catch (error) {
+      console.error("Errore nel token:", error);
+      statoElement.innerText = "Autenticazione fallita.";
+      return null;
     }
+  }
 
-    .pulsanti-container {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 30px;
-      width: 90%;
-      max-width: 700px;
-      justify-items: center;
-    }
-
-    .pulsante {
-      width: 300px;
-      padding: 25px;
-      font-size: 1.3em;
-      font-weight: bold;
-      background-color: #0078d4;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      text-align: center;
-    }
-
-    .pulsante:hover {
-      background-color: #005a9e;
-    }
-
-    #formInserisciNominativo {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.6);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .modulo-contenuto {
-      background-color: white;
-      padding: 40px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .modulo-contenuto h2 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .modulo-contenuto label {
-      font-weight: bold;
-    }
-
-    .modulo-contenuto input,
-    .modulo-contenuto select {
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 1em;
-      width: 100%;
-    }
-
-    .pulsanti-form {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-    }
-
-    .pulsanti-form button {
-      width: 48%;
-      padding: 14px;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1em;
-    }
-
-    #btnInserisciDati {
-      background-color: #28a745;
-      color: white;
-    }
-
-    #btnIndietro {
-      background-color: #dc3545;
-      color: white;
-    }
-
-    #stato {
-      margin-top: 30px;
-      font-weight: bold;
-      color: #333;
-      text-align: center;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-  </style>
-</head>
-<body>
-  <h1>Gestione Liste Giorno</h1>
-
-  <div class="pulsanti-container">
-    <button class="pulsante" id="btnInserisci">INSERISCI NOMINATIVO</button>
-    <button class="pulsante" id="btnRicerca">RICERCA NOMINATIVO</button>
-    <button class="pulsante" id="btnVisualizza">VISUALIZZA LISTA GIORNO</button>
-    <button class="pulsante" id="btnCompila">COMPILA LISTA GIORNO</button>
-  </div>
-
-  <p id="stato"></p>
-
-  <div id="formInserisciNominativo" class="hidden">
-    <div class="modulo-contenuto">
-      <h2>Inserisci Nominativo</h2>
-      <form id="nominativoForm">
-        <label for="cognome">Cognome:</label>
-        <input type="text" id="cognome" name="cognome" required />
-
-        <label for="nome">Nome:</label>
-        <input type="text" id="nome" name="nome" required />
-
-        <label for="ambiente">Ambiente:</label>
-        <input type="text" id="ambiente" name="ambiente" />
-
-        <label for="gruppo">Gruppo:</label>
-        <input type="text" id="gruppo" name="gruppo" />
-
-        <label for="consulente">Consulente:</label>
-        <input type="text" id="consulente" name="consulente" />
-
-        <label for="arredatore">Arredatore:</label>
-        <input type="text" id="arredatore" name="arredatore" />
-
-        <label for="giorno">Giorno:</label>
-        <select id="giorno" name="giorno" required></select>
-
-        <label for="mese">Mese:</label>
-        <select id="mese" name="mese" required></select>
-
-        <label for="orario">Orario:</label>
-        <select id="orario" name="orario" required></select>
-
-        <div class="pulsanti-form">
-          <button type="submit" id="btnInserisciDati">INSERISCI</button>
-          <button type="button" id="btnIndietro">INDIETRO</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script src="https://alcdn.msauth.net/browser/2.16.0/js/msal-browser.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+  const menuPrincipale = document.querySelector('.pulsanti-container');
+  const formContainer = document.getElementById('formInserisciNominativo');
+  const btnInserisciNominativo = document.getElementById('btnInserisci');
+  const btnIndietro = document.getElementById('btnIndietro');
+  const nominativo
