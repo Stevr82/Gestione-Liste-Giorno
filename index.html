@@ -1,173 +1,174 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <title>Gestione Liste Giorno</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
+  <meta charset="UTF-8" />
+  <title>Gestione Liste Giorno</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-        .pulsanti-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-gap: 20px;
-            padding: 20px;
-        }
+    h1 {
+      margin-top: 30px;
+      color: #333;
+    }
 
-        .pulsante {
-            padding: 30px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: white;
-            background-color: #0078d4;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            transition: background-color 0.3s ease;
-        }
+    .pulsanti-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 30px;
+      width: 90%;
+      max-width: 600px;
+    }
 
-        .pulsante:hover {
-            background-color: #005a9e;
-        }
+    .pulsante {
+      padding: 20px;
+      font-size: 1.1em;
+      font-weight: bold;
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
 
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 40px;
-        }
+    .pulsante:hover {
+      background-color: #005a9e;
+    }
 
-        #formInserisciNominativo {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
+    #formInserisciNominativo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
 
-        .modulo-contenuto {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+    .modulo-contenuto {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
 
-        .modulo-contenuto input,
-        .modulo-contenuto select {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+    .modulo-contenuto label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
 
-        .pulsanti-form {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
+    .modulo-contenuto input,
+    .modulo-contenuto select {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1em;
+    }
 
-        .pulsanti-form button {
-            width: 48%;
-            padding: 12px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
+    .pulsanti-form {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
 
-        #btnInserisciDati {
-            background-color: #28a745;
-            color: white;
-            border: none;
-        }
+    .pulsanti-form button {
+      width: 48%;
+      padding: 12px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-        #btnIndietro {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-        }
+    #btnInserisciDati {
+      background-color: #28a745;
+      color: white;
+    }
 
-        #stato {
-            text-align: center;
-            margin-top: 20px;
-            font-weight: bold;
-            color: #333;
-        }
+    #btnIndietro {
+      background-color: #dc3545;
+      color: white;
+    }
 
-        .hidden {
-            display: none !important;
-        }
-    </style>
+    #stato {
+      margin: 20px;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
-    <h1>Menu Principale</h1>
-    <div class="pulsanti-container">
-        <button class="pulsante" id="btnInserisci">INSERISCI NOMINATIVO</button>
-        <button class="pulsante" id="btnRicerca">RICERCA NOMINATIVO</button>
-        <button class="pulsante" id="btnVisualizza">VISUALIZZA LISTA GIORNO</button>
-        <button class="pulsante" id="btnCompila">COMPILA LISTA GIORNO</button>
-    </div>
+  <h1>Gestione Liste Giorno</h1>
 
-    <p id="stato"></p>
+  <div class="pulsanti-container">
+    <button class="pulsante" id="btnInserisci">INSERISCI NOMINATIVO</button>
+    <button class="pulsante" id="btnRicerca">RICERCA NOMINATIVO</button>
+    <button class="pulsante" id="btnVisualizza">VISUALIZZA LISTA GIORNO</button>
+    <button class="pulsante" id="btnCompila">COMPILA LISTA GIORNO</button>
+  </div>
 
-    <div id="formInserisciNominativo" class="hidden">
-        <div class="modulo-contenuto">
-            <h2>Inserisci Nominativo</h2>
-            <form id="nominativoForm">
-                <label for="cognome">Cognome:</label>
-                <input type="text" id="cognome" name="cognome" required>
+  <p id="stato"></p>
 
-                <label for="nome">Nome:</label>
-                <input type="text" id="nome" name="nome" required>
+  <div id="formInserisciNominativo" class="hidden">
+    <div class="modulo-contenuto">
+      <h2>Inserisci Nominativo</h2>
+      <form id="nominativoForm">
+        <label for="cognome">Cognome:</label>
+        <input type="text" id="cognome" name="cognome" required />
 
-                <label for="ambiente">Ambiente:</label>
-                <input type="text" id="ambiente" name="ambiente">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required />
 
-                <label for="gruppo">Gruppo:</label>
-                <input type="text" id="gruppo" name="gruppo">
+        <label for="ambiente">Ambiente:</label>
+        <input type="text" id="ambiente" name="ambiente" />
 
-                <label for="consulente">Consulente:</label>
-                <input type="text" id="consulente" name="consulente">
+        <label for="gruppo">Gruppo:</label>
+        <input type="text" id="gruppo" name="gruppo" />
 
-                <label for="arredatore">Arredatore:</label>
-                <input type="text" id="arredatore" name="arredatore">
+        <label for="consulente">Consulente:</label>
+        <input type="text" id="consulente" name="consulente" />
 
-                <label for="giorno">Giorno:</label>
-                <select id="giorno" name="giorno"></select>
+        <label for="arredatore">Arredatore:</label>
+        <input type="text" id="arredatore" name="arredatore" />
 
-                <label for="mese">Mese:</label>
-                <select id="mese" name="mese"></select>
+        <label for="orario">Orario:</label>
+        <select id="orario" name="orario" required></select>
 
-                <label for="orario">Orario:</label>
-                <select id="orario" name="orario"></select>
+        <label for="foglio">Seleziona foglio:</label>
+        <select id="foglio" name="foglio" required></select>
 
-                <div class="pulsanti-form">
-                    <button type="submit" id="btnInserisciDati">INSERISCI</button>
-                    <button type="button" id="btnIndietro">INDIETRO</button>
-                </div>
-            </form>
+        <div class="pulsanti-form">
+          <button type="submit" id="btnInserisciDati">INSERISCI</button>
+          <button type="button" id="btnIndietro">INDIETRO</button>
         </div>
+      </form>
     </div>
+  </div>
 
-    <script src="https://alcdn.msauth.net/browser/2.16.0/js/msal-browser.js"></script>
-    <script src="app.js"></script>
+  <script src="https://alcdn.msauth.net/browser/2.16.0/js/msal-browser.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
