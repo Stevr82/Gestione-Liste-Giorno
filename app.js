@@ -14,14 +14,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         scopes: ["User.Read", "Files.ReadWrite"]
     };
 
-    // Gestione redirect dopo login
     const handleRedirect = async () => {
         try {
             const response = await msalInstance.handleRedirectPromise();
             if (response && response.account) {
                 msalInstance.setActiveAccount(response.account);
                 localStorage.setItem("msalAccount", response.account.homeAccountId);
-                console.log("Login completato via redirect:", response.account.username);
             }
         } catch (error) {
             console.error("Errore nel redirect:", error);
@@ -30,14 +28,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await handleRedirect();
 
-    // Login automatico
     const savedAccountId = localStorage.getItem("msalAccount");
     const accounts = msalInstance.getAllAccounts();
     const account = accounts.find(acc => acc.homeAccountId === savedAccountId);
 
     if (account) {
         msalInstance.setActiveAccount(account);
-        console.log("Account attivo:", account.username);
     } else {
         msalInstance.loginRedirect(loginRequest);
         return;
@@ -111,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             orario: document.getElementById('orario').value
         };
 
-        statoElement.innerText = "Invio in corso...";
+        statoElement.innerText = "Verifica del foglio in corso...";
 
         const accessToken = await getAccessToken();
         if (!accessToken) return;
@@ -120,7 +116,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
         const mese = nomiMesi[parseInt(dati.mese) - 1];
         const worksheetName = `${dati.giorno}-${mese}`;
+
+        // Verifica che il foglio esista
+        const fogliResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        const fogli = await fogliResponse.json();
+        const foglioEsiste = fogli.value.some(ws => ws.name === worksheetName);
+
+        if (!foglioEsiste) {
+            statoElement.innerText = `❌ Il foglio "${worksheetName}" non esiste nel file.`;
+            return;
+        }
+
+        // Crea sessione persistente
+        const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/createSession`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ persistChanges: true })
+        });
+
+        const sessionId = (await sessionResponse.json()).id;
+
         const rangeAddress = "A4:T4";
+        const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
 
         const valoriRiga = [[
             dati.orario,                     // A4
@@ -133,26 +156,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             dati.arredatore                 // T4
         ]];
 
-        const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
-
         try {
             await fetch(apiUrl, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'workbook-session-id': sessionId
                 },
                 body: JSON.stringify({ values: valoriRiga })
             });
 
-            statoElement.innerText = `Dati inseriti nel foglio "${worksheetName}"!`;
+            statoElement.innerText = `✅ Dati inseriti nel foglio "${worksheetName}"!`;
             nominativoForm.reset();
             setTimeout(() => {
                 formContainer.classList.add('hidden');
                 menuPrincipale.classList.remove('hidden');
             }, 2000);
         } catch (error) {
-            statoElement.innerText = `Errore: ${error.message}`;
+            statoElement.innerText = `❌ Errore: ${error.message}`;
             console.error(error);
         }
     });
