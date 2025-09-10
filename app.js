@@ -1,12 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("Script caricato correttamente!");
+    const statoElement = document.getElementById("stato");
 
-    // Configurazione MSAL
     const msalConfig = {
         auth: {
             clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1",
             authority: "https://login.microsoftonline.com/common",
-            redirectUri: "https://stefano.github.io/lista-nominativi" // <-- Sostituisci con il tuo URL pubblico
+            redirectUri: "https://stevr82.github.io/Gestione-Liste-Giorno/"
         }
     };
 
@@ -15,11 +14,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         scopes: ["User.Read", "Files.ReadWrite"]
     };
 
-    // Imposta account attivo se già presente
     const accounts = msalInstance.getAllAccounts();
     if (accounts.length > 0) {
         msalInstance.setActiveAccount(accounts[0]);
-        console.log("Account attivo impostato automaticamente:", accounts[0]);
     }
 
     async function ensureLogin() {
@@ -29,10 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const loginResponse = await msalInstance.loginPopup(loginRequest);
                 msalInstance.setActiveAccount(loginResponse.account);
                 account = loginResponse.account;
-                console.log("Login effettuato:", account);
             } catch (error) {
-                console.error("Errore nel login:", error);
-                statoElement.innerText = "Errore durante il login. Riprova.";
+                statoElement.innerText = "Errore durante il login.";
+                console.error(error);
                 return null;
             }
         }
@@ -50,45 +46,42 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             return response.accessToken;
         } catch (error) {
-            console.warn("Token silenzioso fallito, provo con popup...");
             try {
                 const popupResponse = await msalInstance.acquireTokenPopup(loginRequest);
                 return popupResponse.accessToken;
             } catch (popupError) {
-                console.error("Errore nel token tramite popup:", popupError);
                 statoElement.innerText = "Autenticazione fallita.";
+                console.error(popupError);
                 return null;
             }
         }
     }
 
-    // Elementi DOM
     const menuPrincipale = document.querySelector('.pulsanti-container');
     const formContainer = document.getElementById('formInserisciNominativo');
     const btnInserisciNominativo = document.getElementById('btnInserisci');
     const btnIndietro = document.getElementById('btnIndietro');
     const nominativoForm = document.getElementById('nominativoForm');
-    const statoElement = document.getElementById("stato");
 
     function popolaDropdown() {
-        const giornoDropdown = document.getElementById('giorno');
-        const meseDropdown = document.getElementById('mese');
-        const orarioDropdown = document.getElementById('orario');
+        const giorno = document.getElementById('giorno');
+        const mese = document.getElementById('mese');
+        const orario = document.getElementById('orario');
 
-        giornoDropdown.innerHTML = '';
+        giorno.innerHTML = '';
         for (let i = 1; i <= 31; i++) {
-            giornoDropdown.innerHTML += `<option value="${i}">${i}</option>`;
+            giorno.innerHTML += `<option value="${i}">${i}</option>`;
         }
 
-        meseDropdown.innerHTML = '';
+        mese.innerHTML = '';
         for (let i = 1; i <= 12; i++) {
-            meseDropdown.innerHTML += `<option value="${i}">${i}</option>`;
+            mese.innerHTML += `<option value="${i}">${i}</option>`;
         }
 
         const orari = ['9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
-        orarioDropdown.innerHTML = '';
-        orari.forEach(orario => {
-            orarioDropdown.innerHTML += `<option value="${orario}">${orario}</option>`;
+        orario.innerHTML = '';
+        orari.forEach(o => {
+            orario.innerHTML += `<option value="${o}">${o}</option>`;
         });
     }
 
@@ -154,8 +147,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 menuPrincipale.classList.remove('hidden');
             }, 2000);
         } catch (error) {
-            console.error("Errore durante l'invio:", error);
             statoElement.innerText = `Errore: ${error.message}`;
+            console.error(error);
         }
     });
 
