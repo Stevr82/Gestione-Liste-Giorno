@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         scopes: ["User.Read", "Files.ReadWrite"]
     };
 
-    // 🔁 Gestione del redirect dopo login
+    // Gestione redirect dopo login
     const handleRedirect = async () => {
         try {
             const response = await msalInstance.handleRedirectPromise();
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await handleRedirect();
 
-    // 🔐 Login automatico all'apertura
+    // Login automatico
     const savedAccountId = localStorage.getItem("msalAccount");
     const accounts = msalInstance.getAllAccounts();
     const account = accounts.find(acc => acc.homeAccountId === savedAccountId);
@@ -39,11 +39,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         msalInstance.setActiveAccount(account);
         console.log("Account attivo:", account.username);
     } else {
-        msalInstance.loginRedirect(loginRequest); // 🔁 Reindirizza al login Microsoft
-        return; // Interrompe l'esecuzione finché non torna dal login
+        msalInstance.loginRedirect(loginRequest);
+        return;
     }
 
-    // 🔑 Ottieni token
     async function getAccessToken() {
         try {
             const response = await msalInstance.acquireTokenSilent({
@@ -58,7 +57,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 🎯 Elementi DOM
     const menuPrincipale = document.querySelector('.pulsanti-container');
     const formContainer = document.getElementById('formInserisciNominativo');
     const btnInserisciNominativo = document.getElementById('btnInserisci');
@@ -123,11 +121,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         const mese = nomiMesi[parseInt(dati.mese) - 1];
         const worksheetName = `${dati.giorno}-${mese}`;
         const rangeAddress = "A4:T4";
-        const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
 
-        const valoriRiga = [
-            [dati.orario, '', `${dati.cognome} ${dati.nome}`, dati.ambiente, ...Array(13).fill(''), dati.gruppo, dati.consulente, dati.arredatore]
-        ];
+        const valoriRiga = [[
+            dati.orario,                     // A4
+            '',                              // B4
+            `${dati.cognome} ${dati.nome}`, // C4
+            dati.ambiente,                  // D4
+            ...Array(12).fill(''),          // E4 → Q4
+            dati.gruppo,                    // R4
+            dati.consulente,                // S4
+            dati.arredatore                 // T4
+        ]];
+
+        const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
 
         try {
             await fetch(apiUrl, {
