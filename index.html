@@ -5,12 +5,14 @@
   <title>Gestione Liste Giorno</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    /* Stili di base e reset */
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      font-family: sans-serif;
-      background-color: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      background-color: #eef2f7; /* Sfondo più chiaro */
+      color: #333;
     }
 
     body {
@@ -18,42 +20,49 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      padding: 20px;
     }
 
     h1 {
-      font-size: 2em;
-      margin-bottom: 30px;
-      color: #333;
-    }
-
-    .pulsanti-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 30px;
-      width: 90%;
-      max-width: 700px;
-    }
-
-    .pulsante {
-      flex-basis: 45%;
-      max-width: 300px;
-      padding: 25px;
-      font-size: 1.3em;
-      font-weight: bold;
-      background-color: #0078d4;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
+      font-size: 2.5em;
+      margin-bottom: 40px;
+      color: #1a2a4b;
       text-align: center;
     }
 
-    .pulsante:hover {
-      background-color: #005a9e;
+    /* Stili per i pulsanti del menu principale */
+    .pulsanti-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      width: 100%;
+      max-width: 800px;
     }
 
+    .pulsante {
+      padding: 30px 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .pulsante:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #btnInserisci { background-color: #5d5dff; }
+    #btnRicerca { background-color: #ff9f43; }
+    #btnVisualizza { background-color: #2ecc71; }
+    #btnCompila { background-color: #3498db; }
+
+    /* Stili per il popup del form */
     #formInserisciNominativo {
       position: fixed;
       top: 0;
@@ -65,73 +74,95 @@
       justify-content: center;
       align-items: center;
       z-index: 1000;
+      backdrop-filter: blur(5px);
+      animation: fadeIn 0.3s ease-out;
     }
 
     .modulo-contenuto {
       background-color: white;
       padding: 40px;
-      border-radius: 12px;
+      border-radius: 15px;
       width: 90%;
       max-width: 600px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
       display: flex;
       flex-direction: column;
       gap: 20px;
+      animation: scaleIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     }
 
     .modulo-contenuto h2 {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
+      color: #1a2a4b;
     }
 
     .modulo-contenuto label {
-      font-weight: bold;
+      font-weight: 600;
+      margin-bottom: 5px;
     }
 
     .modulo-contenuto input,
     .modulo-contenuto select {
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
       font-size: 1em;
       width: 100%;
+      box-sizing: border-box;
     }
 
     .pulsanti-form {
       display: flex;
       justify-content: space-between;
-      margin-top: 20px;
+      margin-top: 30px;
     }
 
     .pulsanti-form button {
       width: 48%;
-      padding: 14px;
+      padding: 15px;
       font-weight: bold;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 1em;
+      transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
     #btnInserisciDati {
-      background-color: #28a745;
+      background-color: #27ae60;
       color: white;
     }
 
     #btnIndietro {
-      background-color: #dc3545;
+      background-color: #e74c3c;
       color: white;
+    }
+
+    .pulsanti-form button:hover {
+      transform: scale(1.05);
     }
 
     #stato {
       margin-top: 30px;
       font-weight: bold;
-      color: #333;
+      color: #555;
       text-align: center;
     }
 
     .hidden {
       display: none !important;
+    }
+
+    /* Animazioni */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
   </style>
 </head>
