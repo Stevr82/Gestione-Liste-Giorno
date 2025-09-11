@@ -20,9 +20,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         scopes: ["User.Read", "Files.ReadWrite.All"]
     };
     
-    // Account e percorso del file CORRETTI
+    // Il tuo account
     const userEmail = "stefano.bresolin.vr@gmail.com";
-    const filePath = "/personal/centralino_verona_arredissima_com/Documents/LISTE GIORNO VERONA 2024.xlsx";
+    
+    // Il nome del file
+    const fileName = "LISTE GIORNO VERONA 2024.xlsx";
 
     const msalInstance = new msal.PublicClientApplication(msalConfig);
 
@@ -62,14 +64,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             return null;
         }
     }
+    
+    async function findSharedFileId() {
+        const accessToken = await getAccessToken();
+        if (!accessToken) return null;
+
+        try {
+            const url = `https://graph.microsoft.com/v1.0/me/drive/sharedWithMe`;
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message || `Errore HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const file = data.value.find(item => item.name === fileName);
+
+            if (file && file.remoteItem && file.remoteItem.id) {
+                return file.remoteItem.id;
+            } else {
+                throw new Error(`File '${fileName}' non trovato nella cartella 'Condivisi con me'.`);
+            }
+        } catch (error) {
+            console.error("Errore nel recupero dell'ID del file:", error);
+            statoElement.innerText = `❌ Errore: ${error.message}`;
+            return null;
+        }
+    }
 
     // Funzione per mostrare i fogli di lavoro disponibili
     async function mostraFogliDisponibili() {
         const accessToken = await getAccessToken();
         if (!accessToken) return;
+        
+        const fileId = await findSharedFileId();
+        if (!fileId) return;
 
-        // URL AGGIORNATO con il percorso del file
-        const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/worksheets`;
+        const url = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets`;
 
         try {
             const response = await fetch(url, {
@@ -149,6 +183,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const accessToken = await getAccessToken();
         if (!accessToken) return;
+        
+        const fileId = await findSharedFileId();
+        if (!fileId) return;
 
         const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
         const mese = nomiMesi[parseInt(dati.mese) - 1];
@@ -166,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let sessionId = null;
         try {
             // URL AGGIORNATO per creare la sessione
-            const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/createSession`, {
+            const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/createSession`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -183,7 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             sessionId = (await sessionResponse.json()).id;
 
             // URL AGGIORNATO per inviare i dati
-            const apiUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
+            const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
             const writeResponse = await fetch(apiUrl, {
                 method: 'PATCH',
                 headers: {
@@ -213,7 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally {
             // Chiusura della sessione di lavoro (importantissimo per evitare blocchi)
             if (sessionId) {
-                await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/closeSession`, {
+                await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/closeSession`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
