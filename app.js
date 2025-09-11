@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // Il nome del file
-    const fileName = "LISTE GIORNO VERONA 2024.xlsx";
+    const fileName = "LISTE GIORNO VERONA 2026.xlsx";
 
     const msalInstance = new msal.PublicClientApplication(msalConfig);
 
@@ -299,3 +299,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         statoElement.innerText = "Funzionalità 'COMPILA LISTA GIORNO' ancora da implementare.";
     });
 });
+
