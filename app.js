@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginRequest = {
         scopes: ["User.Read", "Files.ReadWrite.All"]
     };
-    const userEmail = "centralino_verona_arredissima_com@nordestholding.com";
     
-    // PERCORSO DEL FILE CORRETTO
+    // Account e percorso del file CORRETTI
+    const userEmail = "stefano.bresolin.vr@gmail.com";
     const filePath = "/personal/centralino_verona_arredissima_com/Documents/LISTE GIORNO VERONA 2024.xlsx";
 
     const msalInstance = new msal.PublicClientApplication(msalConfig);
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const accessToken = await getAccessToken();
         if (!accessToken) return;
 
-        // URL AGGIORNATO
+        // URL AGGIORNATO con il percorso del file
         const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/worksheets`;
 
         try {
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let sessionId = null;
         try {
-            // URL AGGIORNATO
+            // URL AGGIORNATO per creare la sessione
             const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/createSession`, {
                 method: 'POST',
                 headers: {
@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             sessionId = (await sessionResponse.json()).id;
 
-            // URL AGGIORNATO
+            // URL AGGIORNATO per inviare i dati
             const apiUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
             const writeResponse = await fetch(apiUrl, {
                 method: 'PATCH',
