@@ -62,12 +62,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    async function findSharedFileId() {
+    // NUOVA FUNZIONE: cerca il file nell'intero drive
+    async function findFileId() {
         const accessToken = await getAccessToken();
         if (!accessToken) return null;
 
         try {
-            const url = `https://graph.microsoft.com/v1.0/me/drive/sharedWithMe`;
+            const url = `https://graph.microsoft.com/v1.0/me/drive/root/search(q='${fileName}')`;
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
@@ -80,41 +81,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = await response.json();
             const file = data.value.find(item => item.name === fileName);
 
-            if (file && file.remoteItem && file.remoteItem.id) {
-                return file.remoteItem.id;
+            if (file && file.id) {
+                return file.id;
             } else {
-                throw new Error(`File '${fileName}' non trovato nella cartella 'Condivisi con me'.`);
+                throw new Error(`File '${fileName}' non trovato nel tuo drive.`);
             }
         } catch (error) {
             console.error("Errore nel recupero dell'ID del file:", error);
             statoElement.innerText = `❌ Errore: ${error.message}`;
-            return null;
-        }
-    }
-
-    // NUOVA FUNZIONE: Trova la prossima riga vuota in un foglio di lavoro
-    async function findNextEmptyRow(fileId, worksheetName, accessToken) {
-        try {
-            const url = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/usedRange`;
-            const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error.message || `Errore HTTP: ${response.status}`);
-            }
-
-            const data = await response.json();
-            // Il numero di riga successivo è il conteggio delle righe usate + 1
-            // Se i tuoi dati iniziano dalla riga 4, il prossimo sarà 4 + data.rowCount.
-            // La riga 4 ha un valore di indice 3. Quindi, 3 + data.rowCount
-            const nextRow = data.rowIndex + data.rowCount + 1;
-            // Restituisce il range completo per la riga vuota (es. "A5:T5")
-            return `A${nextRow}:T${nextRow}`;
-        } catch (error) {
-            console.error("Errore nel trovare la riga vuota:", error);
-            statoElement.innerText = `❌ Errore: Impossibile trovare la prossima riga vuota.`;
             return null;
         }
     }
@@ -124,7 +98,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const accessToken = await getAccessToken();
         if (!accessToken) return;
 
-        const fileId = await findSharedFileId();
+        // CHIAMATA ALLA NUOVA FUNZIONE
+        const fileId = await findFileId();
         if (!fileId) return;
 
         const url = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets`;
@@ -208,14 +183,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const accessToken = await getAccessToken();
         if (!accessToken) return;
 
-        const fileId = await findSharedFileId();
+        // CHIAMATA ALLA NUOVA FUNZIONE
+        const fileId = await findFileId();
         if (!fileId) return;
 
         const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
         const mese = nomiMesi[parseInt(dati.mese) - 1];
         const worksheetName = `${dati.giorno}-${mese}`;
 
-        // CHIAMATA ALLA NUOVA FUNZIONE PER TROVARE LA RIGA VUOTA
+        // Trova la prossima riga vuota
         const rangeAddress = await findNextEmptyRow(fileId, worksheetName, accessToken);
         if (!rangeAddress) return;
 
@@ -299,4 +275,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         statoElement.innerText = "Funzionalità 'COMPILA LISTA GIORNO' ancora da implementare.";
     });
 });
-
