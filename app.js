@@ -19,10 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginRequest = {
         scopes: ["User.Read", "Files.ReadWrite.All"]
     };
-    
-    // Il tuo account
-    const userEmail = "stefano.bresolin.vr@gmail.com";
-    
+
     // Il nome del file
     const fileName = "LISTE GIORNO VERONA 2024.xlsx";
 
@@ -64,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return null;
         }
     }
-    
+
     async function findSharedFileId() {
         const accessToken = await getAccessToken();
         if (!accessToken) return null;
@@ -95,11 +92,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // NUOVA FUNZIONE: Trova la prossima riga vuota in un foglio di lavoro
+    async function findNextEmptyRow(fileId, worksheetName, accessToken) {
+        try {
+            const url = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/usedRange`;
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message || `Errore HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+            // Il numero di riga successivo è il conteggio delle righe usate + 1
+            // Se i tuoi dati iniziano dalla riga 4, il prossimo sarà 4 + data.rowCount.
+            // La riga 4 ha un valore di indice 3. Quindi, 3 + data.rowCount
+            const nextRow = data.rowIndex + data.rowCount + 1;
+            // Restituisce il range completo per la riga vuota (es. "A5:T5")
+            return `A${nextRow}:T${nextRow}`;
+        } catch (error) {
+            console.error("Errore nel trovare la riga vuota:", error);
+            statoElement.innerText = `❌ Errore: Impossibile trovare la prossima riga vuota.`;
+            return null;
+        }
+    }
+
     // Funzione per mostrare i fogli di lavoro disponibili
     async function mostraFogliDisponibili() {
         const accessToken = await getAccessToken();
         if (!accessToken) return;
-        
+
         const fileId = await findSharedFileId();
         if (!fileId) return;
 
@@ -163,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         menuPrincipale.classList.remove('hidden');
     });
 
-    // Gestione invio del form
+    // Gestione invio del form (AGGIORNATA)
     nominativoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -183,15 +207,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const accessToken = await getAccessToken();
         if (!accessToken) return;
-        
+
         const fileId = await findSharedFileId();
         if (!fileId) return;
 
         const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
         const mese = nomiMesi[parseInt(dati.mese) - 1];
         const worksheetName = `${dati.giorno}-${mese}`;
-        const rangeAddress = "A4:T4";
-        
+
+        // CHIAMATA ALLA NUOVA FUNZIONE PER TROVARE LA RIGA VUOTA
+        const rangeAddress = await findNextEmptyRow(fileId, worksheetName, accessToken);
+        if (!rangeAddress) return;
+
         const valoriRiga = [
             [
                 dati.orario, '', `${dati.cognome} ${dati.nome}`, dati.ambiente,
@@ -202,7 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let sessionId = null;
         try {
-            // URL AGGIORNATO per creare la sessione
+            // Creazione della sessione
             const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/createSession`, {
                 method: 'POST',
                 headers: {
@@ -219,7 +246,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             sessionId = (await sessionResponse.json()).id;
 
-            // URL AGGIORNATO per inviare i dati
+            // Invio dei dati al range dinamico
             const apiUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
             const writeResponse = await fetch(apiUrl, {
                 method: 'PATCH',
@@ -238,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             statoElement.innerText = `✅ Dati inseriti nel foglio "${worksheetName}"!`;
             nominativoForm.reset();
-            
+
             setTimeout(() => {
                 formContainer.classList.add('hidden');
                 menuPrincipale.classList.remove('hidden');
@@ -248,7 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             statoElement.innerText = `❌ Errore: ${error.message}`;
             console.error("Errore completo:", error);
         } finally {
-            // Chiusura della sessione di lavoro (importantissimo per evitare blocchi)
+            // Chiusura della sessione di lavoro
             if (sessionId) {
                 await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/closeSession`, {
                     method: 'POST',
