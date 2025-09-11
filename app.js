@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const userEmail = "centralino_verona_arredissima_com@nordestholding.com";
-  const filePath = "Documents/LISTE GIORNO VERONA 2024.xlsx";
+  const filePath = "Documents/LISTE GIORNO VERONA 2026.xlsx";
   const baseUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:/${filePath}:/workbook`;
 
   const handleRedirect = async () => {
