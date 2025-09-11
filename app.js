@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnIndietro = document.getElementById('btnIndietro');
     const nominativoForm = document.getElementById('nominativoForm');
 
-    // Configurazione e variabili globali (spostate qui per chiarezza)
+    // Configurazione e variabili globali
     const msalConfig = {
         auth: {
             clientId: "c3893db8-ca5a-4193-8cfd-08feb16832b1",
@@ -150,8 +150,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const nomiMesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
         const mese = nomiMesi[parseInt(dati.mese) - 1];
         const worksheetName = `${dati.giorno}-${mese}`;
+        const rangeAddress = "A4:T4";
         
-        // Ho modificato l'intervallo per usare una riga vuota
         const valoriRiga = [
             [
                 dati.orario, '', `${dati.cognome} ${dati.nome}`, dati.ambiente,
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let sessionId = null;
         try {
-            // Creazione di una sessione di lavoro (essenziale per l'aggiornamento)
+            // Creazione di una sessione di lavoro
             const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/createSession`, {
                 method: 'POST',
                 headers: {
@@ -173,25 +173,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             if (!sessionResponse.ok) {
-                throw new Error(`Errore nella creazione della sessione: ${sessionResponse.statusText}`);
+                const errorData = await sessionResponse.json();
+                throw new Error(errorData.error.message || `Errore nella creazione della sessione: ${sessionResponse.status}`);
             }
 
             sessionId = (await sessionResponse.json()).id;
-
-            // Trovare la prima riga vuota
-            const findLastRowUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/usedRange`;
-            const findLastRowResponse = await fetch(findLastRowUrl, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'workbook-session-id': sessionId
-                }
-            });
-            const usedRange = await findLastRowResponse.json();
-            
-            // L'API a volte restituisce un errore se il foglio è vuoto.
-            // Semplifichiamo per ora usando un range statico per l'aggiunta.
-            // Per un'applicazione più robusta, l'ideale sarebbe usare `range.getLastRow()`.
-            const rangeAddress = `A4:T4`; // L'intervallo originale
 
             // Scrittura dei dati
             const apiUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
