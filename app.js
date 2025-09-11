@@ -20,7 +20,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         scopes: ["User.Read", "Files.ReadWrite.All"]
     };
     const userEmail = "centralino_verona_arredissima_com@nordestholding.com";
-    const fileId = "A3856CCE-D8CC-4C35-92E3-02EAB1E3B368";
+    
+    // PERCORSO DEL FILE CORRETTO
+    const filePath = "/personal/centralino_verona_arredissima_com/Documents/LISTE GIORNO VERONA 2024.xlsx";
 
     const msalInstance = new msal.PublicClientApplication(msalConfig);
 
@@ -66,7 +68,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const accessToken = await getAccessToken();
         if (!accessToken) return;
 
-        const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/worksheets`;
+        // URL AGGIORNATO
+        const url = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/worksheets`;
 
         try {
             const response = await fetch(url, {
@@ -162,8 +165,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let sessionId = null;
         try {
-            // Creazione di una sessione di lavoro
-            const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/createSession`, {
+            // URL AGGIORNATO
+            const sessionResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/createSession`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -179,8 +182,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             sessionId = (await sessionResponse.json()).id;
 
-            // Scrittura dei dati
-            const apiUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
+            // URL AGGIORNATO
+            const apiUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/worksheets('${worksheetName}')/range(address='${rangeAddress}')`;
             const writeResponse = await fetch(apiUrl, {
                 method: 'PATCH',
                 headers: {
@@ -210,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally {
             // Chiusura della sessione di lavoro (importantissimo per evitare blocchi)
             if (sessionId) {
-                await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/items/${fileId}/workbook/closeSession`, {
+                await fetch(`https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:${filePath}:/workbook/closeSession`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
